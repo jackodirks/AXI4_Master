@@ -134,9 +134,16 @@ begin
         end if;
     end process;
 
-    sim_loop : process
+    read_loop : process
+        variable read_addr : unsigned(AXI_ACP_1_write_addr'RANGE) := to_unsigned(15, AXI_ACP_1_write_addr'length );
     begin
-        wait for 10*clock_period;
+        AXI_ACP_1_read_addr <= std_logic_vector(read_addr);
+        wait for 2*clock_period;
+        assert AXI_ACP_1_ARADDR = (AXI_ACP_1_ARADDR'range => '0')
+            report "M_AXI_ACP_ARADDR is nonzero while rst is high! "
+            & integer'image(to_integer(unsigned(AXI_ACP_1_ARADDR))) severity error;
+        wait for 5*clock_period;
+        rst <= '0';
         test_done <= true;
         wait;
     end process;
