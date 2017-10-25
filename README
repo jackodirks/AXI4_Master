@@ -1,0 +1,3 @@
+This VHDL library provides an interface into the AXI4 ACP Master.
+
+The library is tested using GHDL, and the tb file is written with GHDL in mind.
