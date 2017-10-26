@@ -294,6 +294,15 @@ begin
         -- AXI_ACP_1_ARBURST
         assert AXI_ACP_1_ARVALID = '0' severity error;
         assert AXI_ACP_1_RREADY = '0' severity error;
+        -- Set the inputs
+        -- AXI_ACP_1_read_addr
+        -- AXI_ACP_1_read_start
+        -- AXI_ACP_1_ARREADY
+        -- AXI_ACP_1_RDATA
+        -- AXI_ACP_1_RRESP
+        AXI_ACP_1_RVALID <= '0';
+        -- AXI_ACP_1_RLAST
+        wait for clock_period;
         read_test_done <= true;
         wait;
         --write(my_line, AXI_ACP_1_read_data);

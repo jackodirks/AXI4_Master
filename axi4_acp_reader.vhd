@@ -28,12 +28,15 @@ end axi4_acp_reader;
 
 ARCHITECTURE Behavioral of axi4_acp_reader is
     type state_type is (    rst_state, wait_for_start, assert_arvalid,
-                            wait_for_rvalid_rise, wait_for_rvalid_fall);
+                            wait_for_rvalid_rise, wait_for_rvalid_fall_last, wait_for_rvalid_fall);
     signal cur_state    : state_type := rst_state;
     signal next_state   : state_type := rst_state;
 
+    signal update_read_data     :   boolean := false;
+    signal update_read_addr     :   boolean := false;
+    signal update_read_result   :   boolean := false;
+
 begin
-    -- Traps rvalid
     -- Handles the cur_state variable
     sync_proc : process(clk, rst)
     begin
@@ -47,12 +50,10 @@ begin
     -- handles the next_state variable
     state_decider : process(cur_state, M_AXI_ACP_ARREADY,
             M_AXI_ACP_RLAST, M_AXI_ACP_RVALID, read_start)
-        variable rlast : std_logic := '0';
     begin
         next_state <= cur_state;
         case cur_state is
             when rst_state =>
-                RLAST := '0';
                 next_state <= wait_for_start;
             when wait_for_start =>
                 if read_start = '1' then
@@ -64,58 +65,88 @@ begin
                 end if;
             when wait_for_rvalid_rise =>
                 if M_AXI_ACP_RVALID = '1' then
-                    next_state <= wait_for_rvalid_fall;
+                    if M_AXI_ACP_RLAST = '1' then
+                        next_state <= wait_for_rvalid_fall_last;
+                    else
+                        next_state <= wait_for_rvalid_fall;
+                    end if;
                 end if;
             when wait_for_rvalid_fall =>
-                if M_AXI_ACP_RLAST = '1' then
-                    rlast := '1';
-                end if;
                 if M_AXI_ACP_RVALID = '0' then
-                    if rlast = '0' then
-                        next_state <= wait_for_rvalid_rise;
-                    else
-                        next_state <= wait_for_start;
-                    end if;
+                    next_state <= wait_for_rvalid_rise;
+                end if;
+            when wait_for_rvalid_fall_last =>
+                if M_AXI_ACP_RVALID = '0' then
+                    next_state <= wait_for_start;
                 end if;
         end case;
     end process;
+
+    signal_store : process(clk, rst, update_read_data, update_read_addr, update_read_result)
+        variable read_data_store : std_logic_vector(read_data'RANGE);
+        variable read_addr_store : std_logic_vector(read_addr'RANGE);
+        variable read_result_store : std_logic_vector(read_result'RANGE);
+    begin
+        if rst = '1' then
+            read_data_store := (others => '0');
+            read_addr_store := (others => '0');
+            read_result_store := (others => '0');
+        elsif rising_edge(clk) then
+            if update_read_data then
+                read_data_store := M_AXI_ACP_RDATA(read_data'RANGE);
+            end if;
+            if update_read_addr then
+                read_addr_store := read_addr;
+            end if;
+            if update_read_result then
+                read_result_store := M_AXI_ACP_RRESP;
+            end if;
+        end if;
+        read_data <= read_data_store;
+        read_result <= read_result_store;
+        M_AXI_ACP_ARADDR <= read_addr_store;
+    end process;
+
     -- The state decides the output
     output_decider : process(cur_state, M_AXI_ACP_RDATA, read_addr, M_AXI_ACP_RRESP)
-        variable read_data_store : std_logic_vector(read_data'RANGE) := (others => '0');
-        variable read_addr_store : std_logic_vector(read_addr'RANGE) := (others => '0');
-        variable read_result_store : std_logic_vector(read_result'RANGE) := (others => '0');
     begin
         case cur_state is
             when rst_state =>
-                read_data_store := (others => '0');
-                read_addr_store := (others => '0');
-                read_result_store := (others => '0');
                 read_complete <= '0';
                 M_AXI_ACP_ARVALID <= '0';
                 M_AXI_ACP_RREADY <= '0';
+                update_read_data <= false;
+                update_read_addr <= false;
+                update_read_result <= false;
             when wait_for_start =>
-                read_addr_store := read_addr;
                 read_complete <= '1';
                 M_AXI_ACP_ARVALID <= '0';
                 M_AXI_ACP_RREADY <= '0';
+                update_read_data <= false;
+                update_read_addr <= true;
+                update_read_result <= false;
             when assert_arvalid =>
                 read_complete <= '0';
                 M_AXI_ACP_ARVALID <= '1';
                 M_AXI_ACP_RREADY <= '0';
+                update_read_data <= false;
+                update_read_addr <= false;
+                update_read_result <= false;
             when wait_for_rvalid_rise =>
                 read_complete <= '0';
                 M_AXI_ACP_ARVALID <= '0';
                 M_AXI_ACP_RREADY <= '1';
-            when wait_for_rvalid_fall =>
-                read_data_store := M_AXI_ACP_RDATA(31 DOWNTO 0);
-                read_result_store := M_AXI_ACP_RRESP;
+                update_read_data <= true;
+                update_read_addr <= false;
+                update_read_result <= true;
+            when wait_for_rvalid_fall|wait_for_rvalid_fall_last =>
                 read_complete <= '1';
                 M_AXI_ACP_ARVALID <= '0';
                 M_AXI_ACP_RREADY <= '0';
+                update_read_data <= true;
+                update_read_addr <= false;
+                update_read_result <= true;
         end case;
-        read_data <= read_data_store;
-        read_result <= read_result_store;
-        M_AXI_ACP_ARADDR <= read_addr_store;
         -- The following signals get a default value because this is still a simple test
         -- One burst:
         M_AXI_ACP_ARLEN <= (others => '0');
