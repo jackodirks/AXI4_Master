@@ -1,6 +1,6 @@
 WORKDIR ?= work/
 WORKNAMEPREFIX ?= work
-STD ?= 00
+STD ?= 08
 WORKNAMESUFFIX ?= obj$(STD).cf
 MAXRUNTIME ?= 50000ns
 GHDL ?= ghdl
@@ -15,9 +15,7 @@ CLEANFLAGS = --remove --workdir=$(WORKDIR)
 
 TESTBENCHFILE := tb_axi4_acp.vhd
 TESTBENCH := tb_axi4_acp
-# There seems to be a GHDL bug :(
-# WORKFILE := $(WORKDIR)$(WORKNAMEPREFIX)-$(WORKNAMESUFFIX)
-WORKFILE := $(WORKDIR)$(WORKNAMEPREFIX)-obj93.cf
+WORKFILE := $(WORKDIR)$(WORKNAMEPREFIX)-$(WORKNAMESUFFIX)
 TARGET := $(WORKDIR)$(TESTBENCH).ghw
 SRC := $(wildcard *.vhd)
 
