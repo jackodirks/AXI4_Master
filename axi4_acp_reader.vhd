@@ -27,7 +27,7 @@ entity axi4_acp_reader is
 end axi4_acp_reader;
 
 ARCHITECTURE Behavioral of axi4_acp_reader is
-    type state_type is (    rst_state, wait_for_start, wait_for_arready_rise, wait_for_arready_fall,
+    type state_type is (    rst_state, wait_for_start, assert_arvalid,
                             wait_for_rvalid_rise, wait_for_rvalid_fall);
     signal cur_state    : state_type := rst_state;
     signal next_state   : state_type := rst_state;
@@ -56,34 +56,22 @@ begin
                 next_state <= wait_for_start;
             when wait_for_start =>
                 if read_start = '1' then
-                    if M_AXI_ACP_ARREADY = '1' then
-                        next_state <= wait_for_arready_fall;
-                    else
-                        next_state <= wait_for_arready_rise;
-                    end if;
+                    next_state <= assert_arvalid;
                 end if;
-            when wait_for_arready_rise =>
+            when assert_arvalid =>
                 if M_AXI_ACP_ARREADY = '1' then
-                    next_state <= wait_for_arready_fall;
-                end if;
-            when wait_for_arready_fall =>
-                if M_AXI_ACP_ARREADY = '0' then
-                    if M_AXI_ACP_RVALID = '1' then
-                        next_state <= wait_for_rvalid_fall;
-                    else
-                        next_state <= wait_for_rvalid_rise;
-                    end if;
+                    next_state <= wait_for_rvalid_rise;
                 end if;
             when wait_for_rvalid_rise =>
                 if M_AXI_ACP_RVALID = '1' then
-                    next_state <= wait_for_rvalid_rise;
+                    next_state <= wait_for_rvalid_fall;
                 end if;
             when wait_for_rvalid_fall =>
                 if M_AXI_ACP_RLAST = '1' then
                     rlast := '1';
                 end if;
                 if M_AXI_ACP_RVALID = '0' then
-                    if rlast = '1' then
+                    if rlast = '0' then
                         next_state <= wait_for_rvalid_rise;
                     else
                         next_state <= wait_for_start;
@@ -110,14 +98,10 @@ begin
                 read_complete <= '1';
                 M_AXI_ACP_ARVALID <= '0';
                 M_AXI_ACP_RREADY <= '0';
-            when wait_for_arready_rise =>
+            when assert_arvalid =>
                 read_complete <= '0';
                 M_AXI_ACP_ARVALID <= '1';
                 M_AXI_ACP_RREADY <= '0';
-            when wait_for_arready_fall =>
-                read_complete <= '0';
-                M_AXI_ACP_ARVALID <= '1';
-                M_AXI_ACP_RREADY <= '1';
             when wait_for_rvalid_rise =>
                 read_complete <= '0';
                 M_AXI_ACP_ARVALID <= '0';

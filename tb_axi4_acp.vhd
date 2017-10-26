@@ -1,7 +1,8 @@
+library STD;
+use std.textio.ALL;
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.numeric_std.ALL;
-use std.textio.ALL;
 
 entity tb_axi4_acp is
 end tb_axi4_acp;
@@ -9,9 +10,11 @@ end tb_axi4_acp;
 architecture Behavioral of tb_axi4_acp is
     constant clock_period           : time := 20 ns;
 
-    signal test_done                : boolean := false;
+    signal test_done                : boolean;
+    signal read_test_done           : boolean := false;
+    signal write_test_done          : boolean := true;
 
-    signal clk                      : std_logic                         := '0';
+    signal clk                      : std_logic                         := '1';
     signal rst                      : std_logic                         := '1';
     -- The signals for axi4_acp_1
     signal AXI_ACP_1_write_addr     : std_logic_vector(31 downto 0)     := (others => '0');
@@ -122,6 +125,9 @@ begin
         M_AXI_ACP_RVALID    => AXI_ACP_1_RVALID,
         M_AXI_ACP_RREADY    => AXI_ACP_1_RREADY
     );
+
+    test_done <= read_test_done and write_test_done;
+
     -- Clk generator, simply switch flanks every half period
     clock_gen : process
     begin
@@ -134,18 +140,166 @@ begin
         end if;
     end process;
 
-    read_loop : process
-        variable read_addr : unsigned(AXI_ACP_1_write_addr'RANGE) := to_unsigned(15, AXI_ACP_1_write_addr'length );
+    common_loop : process
     begin
-        AXI_ACP_1_read_addr <= std_logic_vector(read_addr);
         wait for 2*clock_period;
-        assert AXI_ACP_1_ARADDR = (AXI_ACP_1_ARADDR'range => '0')
-            report "M_AXI_ACP_ARADDR is nonzero while rst is high! "
-            & integer'image(to_integer(unsigned(AXI_ACP_1_ARADDR))) severity error;
-        wait for 5*clock_period;
         rst <= '0';
-        test_done <= true;
         wait;
+    end process;
+
+    read_loop : process
+        constant read_addr : unsigned(AXI_ACP_1_write_addr'RANGE) := to_unsigned(15, AXI_ACP_1_write_addr'length );
+        variable my_line : line;
+    begin
+        -- Give all inputs sensible defaults
+        AXI_ACP_1_read_addr <= (others => '0');
+        AXI_ACP_1_read_start <= '0';
+        AXI_ACP_1_ARREADY <= '0';
+        AXI_ACP_1_RDATA <= (others => '0');
+        AXI_ACP_1_RRESP <= (others => '0');
+        AXI_ACP_1_RLAST <= '0';
+        AXI_ACP_1_RVALID <= '0';
+        wait for clock_period;
+        -- Check the outputs
+        -- AXI_ACP_1_read_data
+        assert AXI_ACP_1_read_complete = '0' severity error;
+        -- AXI_ACP_1_read_result
+        -- AXI_ACP_1_ARADDR
+        -- AXI_ACP_1_ARLEN
+        -- AXI_ACP_1_ARSIZE
+        -- AXI_ACP_1_ARBURST
+        assert AXI_ACP_1_ARVALID = '0' severity error;
+        assert AXI_ACP_1_RREADY = '0' severity error;
+        wait until rst = '0';
+
+        wait for clock_period;
+        -- Start state: the machine waits until read_start is '1'.
+        -- Check the outputs
+        for I in 0 to 3 loop
+            -- AXI_ACP_1_read_data
+            assert AXI_ACP_1_read_complete = '1' severity error;
+            -- AXI_ACP_1_read_result
+            -- AXI_ACP_1_ARADDR
+            -- AXI_ACP_1_ARLEN
+            -- AXI_ACP_1_ARSIZE
+            -- AXI_ACP_1_ARBURST
+            assert AXI_ACP_1_ARVALID = '0' severity error;
+            assert AXI_ACP_1_RREADY = '0' severity error;
+            wait for clock_period;
+        end loop;
+        -- Set the inputs
+        AXI_ACP_1_read_addr <= std_logic_vector(read_addr);
+        AXI_ACP_1_read_start <= '1';
+        -- AXI_ACP_1_ARREADY
+        -- AXI_ACP_1_RDATA
+        -- AXI_ACP_1_RRESP
+        -- AXI_ACP_1_RLAST
+        -- AXI_ACP_1_RVALID
+
+        wait for clock_period;
+        -- Read start has become one, all values should now be locked in
+        -- Check the outputs
+        -- AXI_ACP_1_read_data
+        assert AXI_ACP_1_read_complete = '0' severity error;
+        -- AXI_ACP_1_read_result
+        assert AXI_ACP_1_ARADDR = std_logic_vector(read_addr) severity error;
+        -- AXI_ACP_1_ARLEN
+        -- AXI_ACP_1_ARSIZE
+        -- AXI_ACP_1_ARBURST
+        assert AXI_ACP_1_ARVALID = '1' severity error;
+        assert AXI_ACP_1_RREADY = '0' severity error;
+        wait for clock_period;
+        -- Set the inputs
+        AXI_ACP_1_read_addr <= (others => '0');
+        AXI_ACP_1_read_start <= '0';
+        -- AXI_ACP_1_ARREADY
+        -- AXI_ACP_1_RDATA
+        -- AXI_ACP_1_RRESP
+        -- AXI_ACP_1_RLAST
+        -- AXI_ACP_1_RVALID
+
+        wait for clock_period;
+        -- Check lock-in and then signal receive
+        -- Check the outputs
+        for I in 0 to 2 loop
+            -- AXI_ACP_1_read_data
+            assert AXI_ACP_1_read_complete = '0' severity error;
+            -- AXI_ACP_1_read_result
+            assert AXI_ACP_1_ARADDR = std_logic_vector(read_addr) severity error;
+            -- AXI_ACP_1_ARLEN
+            -- AXI_ACP_1_ARSIZE
+            -- AXI_ACP_1_ARBURST
+            assert AXI_ACP_1_ARVALID = '1' severity error;
+            assert AXI_ACP_1_RREADY = '0' severity error;
+            wait for clock_period;
+        end loop;
+        -- Set the inputs
+        -- AXI_ACP_1_read_addr
+        -- AXI_ACP_1_read_start
+        AXI_ACP_1_ARREADY <= '1';
+        -- AXI_ACP_1_RDATA
+        -- AXI_ACP_1_RRESP
+        -- AXI_ACP_1_RLAST
+        -- AXI_ACP_1_RVALID
+
+        wait for clock_period;
+        -- The address data has just been transmitted, we expect the other side to be waiting for the response
+        -- AXI_ACP_1_read_data
+        assert AXI_ACP_1_read_complete = '0' severity error;
+        -- AXI_ACP_1_read_result
+        -- AXI_ACP_1_ARADDR
+        -- AXI_ACP_1_ARLEN
+        -- AXI_ACP_1_ARSIZE
+        -- AXI_ACP_1_ARBURST
+        assert AXI_ACP_1_ARVALID = '0' severity error;
+        assert AXI_ACP_1_RREADY = '1' severity error;
+        -- Set the inputs
+        -- AXI_ACP_1_read_addr
+        -- AXI_ACP_1_read_start
+        AXI_ACP_1_ARREADY <= '0';
+        AXI_ACP_1_RDATA <= ( 15 Downto 0 => '1', others => '0');
+        AXI_ACP_1_RRESP <= (others => '0');
+        -- AXI_ACP_1_RVALID
+        AXI_ACP_1_RLAST <= '1';
+
+        wait for clock_period;
+        -- Send the response
+        -- Check the outputs
+        -- AXI_ACP_1_read_data
+        assert AXI_ACP_1_read_complete = '0' severity error;
+        -- AXI_ACP_1_read_result
+        -- AXI_ACP_1_ARADDR
+        -- AXI_ACP_1_ARLEN
+        -- AXI_ACP_1_ARSIZE
+        -- AXI_ACP_1_ARBURST
+        assert AXI_ACP_1_ARVALID = '0' severity error;
+        assert AXI_ACP_1_RREADY = '1' severity error;
+        -- Set the inputs
+        -- AXI_ACP_1_read_addr
+        -- AXI_ACP_1_read_start
+        -- AXI_ACP_1_ARREADY
+        -- AXI_ACP_1_RDATA
+        -- AXI_ACP_1_RRESP
+        AXI_ACP_1_RVALID <= '1';
+        -- AXI_ACP_1_RLAST
+
+        wait for clock_period;
+        -- The memory data has just been received, we expect the other side to be "done"
+        assert AXI_ACP_1_read_data = std_logic_vector(to_unsigned(16#ffff#, AXI_ACP_1_read_data'length)) severity error;
+        assert AXI_ACP_1_read_complete = '1' severity error;
+        assert AXI_ACP_1_read_result = (AXI_ACP_1_read_result'range => '0') severity error;
+        -- AXI_ACP_1_ARADDR
+        -- AXI_ACP_1_ARLEN
+        -- AXI_ACP_1_ARSIZE
+        -- AXI_ACP_1_ARBURST
+        assert AXI_ACP_1_ARVALID = '0' severity error;
+        assert AXI_ACP_1_RREADY = '0' severity error;
+        read_test_done <= true;
+        wait;
+        --write(my_line, AXI_ACP_1_read_data);
+        --writeline(output, my_line);
+        --write(my_line, std_logic_vector(to_unsigned(16#ffff#, AXI_ACP_1_read_data'length)));
+        --writeline(output, my_line);
     end process;
 end Behavioral;
 
