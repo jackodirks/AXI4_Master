@@ -11,7 +11,7 @@ BUILDFLAGS = -m --work=$(WORKNAMEPREFIX) --std=$(STD) --workdir=$(WORKDIR)
 RUNFLAGS = -r --work=$(WORKNAMEPREFIX) --std=$(STD) --workdir=$(WORKDIR)
 BENCHFLAGS = --wave=$@
 VIEWFLAGS = --stdout
-CLEANFLAGS = --remove --workdir=$(WORKDIR)
+CLEANFLAGS = --remove --workdir=$(WORKDIR) --std=$(STD)
 
 TESTBENCHFILE := tb_axi4_acp.vhd
 TESTBENCH := tb_axi4_acp
