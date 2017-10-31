@@ -72,13 +72,6 @@ begin
     -- Drive all QOS to 0 to equalize read and write priority, see technical ref man p 132
     M_AXI_ACP_AWQOS <= (others => '0');
     M_AXI_ACP_ARQOS <= (others => '0');
-    -- We are trying to interact with DDR, so ARCACHE and AWCACHE are ignored, see rech ref man p 297
-    -- A sidenote here is about SCU coherency, the ACP port connects to the SCU
-    -- See tech ref page 103. AWUSER and ARUSER are also set to 0 for the same SCU reason
-    M_AXI_ACP_AWCACHE <= (others => '0');
-    M_AXI_ACP_ARCACHE <= (others => '0');
-    M_AXI_ACP_AWUSER <= (others => '0');
-    M_AXI_ACP_ARUSER <= (others => '0');
     -- AWLOCK and ARLOCK are ignored in AXI4, see AXI protocol spec p 99
     M_AXI_ACP_AWLOCK <= (others => '0');
     M_AXI_ACP_ARLOCK <= (others => '0');
@@ -106,6 +99,8 @@ begin
         M_AXI_ACP_AWLEN     => M_AXI_ACP_AWLEN,
         M_AXI_ACP_AWSIZE    => M_AXI_ACP_AWSIZE,
         M_AXI_ACP_AWBURST   => M_AXI_ACP_AWBURST,
+        M_AXI_ACP_AWCACHE   => M_AXI_ACP_AWCACHE,
+        M_AXI_ACP_AWUSER    => M_AXI_ACP_AWUSER,
         M_AXI_ACP_AWVALID   => M_AXI_ACP_AWVALID,
         M_AXI_ACP_AWREADY   => M_AXI_ACP_AWREADY,
         M_AXI_ACP_WDATA     => M_AXI_ACP_WDATA,
@@ -131,6 +126,8 @@ begin
         M_AXI_ACP_ARLEN     => M_AXI_ACP_ARLEN,
         M_AXI_ACP_ARSIZE    => M_AXI_ACP_ARSIZE,
         M_AXI_ACP_ARBURST   => M_AXI_ACP_ARBURST,
+        M_AXI_ACP_ARCACHE   => M_AXI_ACP_ARCACHE,
+        M_AXI_ACP_ARUSER    => M_AXI_ACP_ARUSER,
         M_AXI_ACP_ARVALID   => M_AXI_ACP_ARVALID,
         M_AXI_ACP_ARREADY   => M_AXI_ACP_ARREADY,
         M_AXI_ACP_RDATA     => M_AXI_ACP_RDATA,

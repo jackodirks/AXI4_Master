@@ -14,6 +14,8 @@ entity axi4_acp_writer is
         M_AXI_ACP_AWADDR    :   out std_logic_vector(31 downto 0);
         M_AXI_ACP_AWLEN     :   out std_logic_vector(3 downto 0);
         M_AXI_ACP_AWSIZE    :   out std_logic_vector(2 downto 0);
+        M_AXI_ACP_AWCACHE   :   out std_logic_vector(3 downto 0);
+        M_AXI_ACP_AWUSER    :   out std_logic_vector(4 downto 0);
         M_AXI_ACP_AWBURST   :   out std_logic_vector(1 downto 0);
         M_AXI_ACP_AWVALID   :   out std_logic;
         M_AXI_ACP_AWREADY   :   in  std_logic;
@@ -58,6 +60,8 @@ begin
                 M_AXI_ACP_AWSIZE <= (others => '0');
                 M_AXI_ACP_AWBURST <= (others => '0');
                 M_AXI_ACP_AWVALID <= '0';
+                M_AXI_ACP_AWCACHE <= (others => '0');
+                M_AXI_ACP_AWUSER <= (others => '0');
                 M_AXI_ACP_WDATA <= (others => '0');
                 M_AXI_ACP_WSTRB <= (others => '0');
                 M_AXI_ACP_WLAST <= '0';

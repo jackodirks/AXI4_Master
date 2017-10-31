@@ -15,6 +15,8 @@ entity axi4_acp_reader is
         M_AXI_ACP_ARLEN     :   out std_logic_vector(3 downto 0);
         M_AXI_ACP_ARSIZE    :   out std_logic_vector(2 downto 0);
         M_AXI_ACP_ARBURST   :   out std_logic_vector(1 downto 0);
+        M_AXI_ACP_ARCACHE   :   out std_logic_vector(3 downto 0);
+        M_AXI_ACP_ARUSER    :   out std_logic_vector(4 downto 0);
         M_AXI_ACP_ARVALID   :   out std_logic;
         M_AXI_ACP_ARREADY   :   in  std_logic;
         -- Read data channel signals
@@ -154,6 +156,10 @@ begin
         M_AXI_ACP_ARSIZE <= "010";
         -- For the test, the burst type does not matter. Keep it at 0 (FIXED)
         M_AXI_ACP_ARBURST <= (others => '0');
+        -- See tech ref page 103. ARCACHE and AWCACHE control wether or not the processor cache is involved in this transaction
+        -- For now, they are set to 0, no cache involvement. In the future this feature should be added
+        M_AXI_ACP_ARCACHE <= (others => '0');
+        M_AXI_ACP_ARUSER <= (others => '0');
 
     end process;
 end Behavioral;
