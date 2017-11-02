@@ -222,20 +222,6 @@ begin
         -- AXI_ACP_1_BREADY
         wait for clock_period;
         -- Now the writer should be ready to receive the feedback
-        --AXI_ACP_1_write_addr        <= write_addr;
-        --AXI_ACP_1_write_data        <= write_data
-        AXI_ACP_1_write_start       <= '0';
-        AXI_ACP_1_AWREADY           <= '0';
-        AXI_ACP_1_WREADY            <= '0';
-        AXI_ACP_1_BRESP             <= std_logic_vector(bresp);
-        AXI_ACP_1_BVALID            <= '1';
-        assert AXI_ACP_1_write_complete = '0' severity error;
-        -- AXI_ACP_1_write_result
-        -- AXI_ACP_1_AWVALID
-        -- AXI_ACP_1_AWADDR
-        -- AXI_ACP_1_WDATA
-        -- AXI_ACP_1_WVALID
-        assert AXI_ACP_1_BREADY = '1' severity error;
 
         wait for clock_period;
         -- The writer should have finished operating
