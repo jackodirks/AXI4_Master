@@ -12,7 +12,7 @@ architecture Behavioral of tb_axi4_acp is
 
     signal test_done                : boolean;
     signal read_test_done           : boolean := false;
-    signal write_test_done          : boolean := true;
+    signal write_test_done          : boolean := false;
 
     signal clk                      : std_logic                         := '1';
     signal rst                      : std_logic                         := '1';
@@ -146,6 +146,119 @@ begin
         rst <= '0';
         wait;
     end process;
+
+    write_loop : process
+        constant write_addr : unsigned(AXI_ACP_1_write_addr'RANGE)  := to_unsigned(20, AXI_ACP_1_write_addr'length );
+        constant write_data : unsigned(AXI_ACP_1_write_data'RANGE)  := to_unsigned(14, AXI_ACP_1_write_data'length );
+        constant bresp      : unsigned(AXI_ACP_1_BRESP'RANGE)       := to_unsigned(3, AXI_ACP_1_BRESP'length );
+    begin
+        -- Give all inputs sensible defaults
+        AXI_ACP_1_write_addr        <= (others => '0');
+        AXI_ACP_1_write_data        <= (others => '0');
+        AXI_ACP_1_write_start       <= '0';
+        AXI_ACP_1_AWREADY           <= '0';
+        AXI_ACP_1_WREADY            <= '0';
+        AXI_ACP_1_BRESP             <= (others => '0');
+        AXI_ACP_1_BVALID            <= '0';
+        wait for clock_period;
+        -- Reset is still enabled, test the reset outputs
+        assert AXI_ACP_1_write_complete = '0' severity error;
+        -- AXI_ACP_1_write_result
+        -- AXI_ACP_1_AWADDR
+        assert AXI_ACP_1_AWVALID = '0' severity error;
+        -- AXI_ACP_1_WDATA
+        assert AXI_ACP_1_WVALID = '0' severity error;
+        assert AXI_ACP_1_BREADY = '0' severity error;
+        wait until rst = '0';
+        wait for clock_period;
+        -- Writer should be in start state
+        AXI_ACP_1_write_addr        <= std_logic_vector(write_addr);
+        AXI_ACP_1_write_data        <= std_logic_vector(write_data);
+        AXI_ACP_1_write_start       <= '1';
+        AXI_ACP_1_AWREADY           <= '1';
+        AXI_ACP_1_WREADY            <= '0';
+        -- AXI_ACP_1_BRESP
+        -- AXI_ACP_1_BVALID
+        assert AXI_ACP_1_write_complete = '1' severity error;
+        -- AXI_ACP_1_write_result
+        -- AXI_ACP_1_AWADDR
+        assert AXI_ACP_1_AWVALID = '0' severity error;
+        -- AXI_ACP_1_WDATA
+        assert AXI_ACP_1_WVALID = '0' severity error;
+        assert AXI_ACP_1_BREADY = '0' severity error;
+
+        wait for clock_period;
+        -- Writer should now be sending data
+        AXI_ACP_1_write_addr        <= (others => '0');
+        AXI_ACP_1_write_data        <= (others => '0');
+        AXI_ACP_1_write_start       <= '0';
+        AXI_ACP_1_AWREADY           <= '1';
+        AXI_ACP_1_WREADY            <= '1';
+        -- AXI_ACP_1_BRESP
+        -- AXI_ACP_1_BVALID
+        assert AXI_ACP_1_write_complete = '0' severity error;
+        -- AXI_ACP_1_write_result
+        assert AXI_ACP_1_AWVALID = '1' severity error;
+        assert AXI_ACP_1_AWADDR = std_logic_vector(write_addr);
+        assert AXI_ACP_1_WDATA = std_logic_vector(resize(write_data, AXI_ACP_1_WDATA'length));
+        assert AXI_ACP_1_WVALID = '1' severity error;
+        -- AXI_ACP_1_BREADY
+
+        wait for clock_period;
+        -- Now the writer should be ready to receive the feedback
+        --AXI_ACP_1_write_addr        <= write_addr;
+        --AXI_ACP_1_write_data        <= write_data
+        AXI_ACP_1_write_start       <= '0';
+        AXI_ACP_1_AWREADY           <= '0';
+        AXI_ACP_1_WREADY            <= '0';
+        AXI_ACP_1_BRESP             <= std_logic_vector(bresp);
+        AXI_ACP_1_BVALID            <= '1';
+        assert AXI_ACP_1_write_complete = '0' severity error;
+        -- AXI_ACP_1_write_result
+        assert AXI_ACP_1_AWVALID = '0' severity error;
+        -- AXI_ACP_1_AWADDR
+        -- AXI_ACP_1_WDATA
+        assert AXI_ACP_1_WVALID = '0' severity error;
+        -- AXI_ACP_1_BREADY
+        wait for clock_period;
+        -- Now the writer should be ready to receive the feedback
+        --AXI_ACP_1_write_addr        <= write_addr;
+        --AXI_ACP_1_write_data        <= write_data
+        AXI_ACP_1_write_start       <= '0';
+        AXI_ACP_1_AWREADY           <= '0';
+        AXI_ACP_1_WREADY            <= '0';
+        AXI_ACP_1_BRESP             <= std_logic_vector(bresp);
+        AXI_ACP_1_BVALID            <= '1';
+        assert AXI_ACP_1_write_complete = '0' severity error;
+        -- AXI_ACP_1_write_result
+        -- AXI_ACP_1_AWVALID
+        -- AXI_ACP_1_AWADDR
+        -- AXI_ACP_1_WDATA
+        -- AXI_ACP_1_WVALID
+        assert AXI_ACP_1_BREADY = '1' severity error;
+
+        wait for clock_period;
+        -- The writer should have finished operating
+        --AXI_ACP_1_write_addr        <= write_addr;
+        --AXI_ACP_1_write_data        <= write_data
+        AXI_ACP_1_write_start       <= '0';
+        AXI_ACP_1_AWREADY           <= '0';
+        AXI_ACP_1_WREADY            <= '0';
+        AXI_ACP_1_BRESP             <= (others => '0');
+        AXI_ACP_1_BVALID            <= '0';
+        assert AXI_ACP_1_write_complete = '1' severity error;
+        assert AXI_ACP_1_write_result = std_logic_vector(bresp);
+        -- AXI_ACP_1_AWVALID
+        -- AXI_ACP_1_AWADDR
+        -- AXI_ACP_1_WDATA
+        -- AXI_ACP_1_WVALID
+        assert AXI_ACP_1_BREADY = '0' severity error;
+
+        write_test_done <= true;
+        wait;
+
+    end process;
+
 
     read_loop : process
         constant read_addr : unsigned(AXI_ACP_1_write_addr'RANGE) := to_unsigned(15, AXI_ACP_1_write_addr'length );
