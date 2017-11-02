@@ -30,7 +30,7 @@ end axi4_acp_reader;
 
 ARCHITECTURE Behavioral of axi4_acp_reader is
     type state_type is (    rst_state, wait_for_start, assert_arvalid,
-                            wait_for_rvalid_rise, wait_for_rvalid_fall_last, wait_for_rvalid_fall);
+                            wait_for_rvalid_rise, wait_for_rvalid_fall);
     signal cur_state    : state_type := rst_state;
     signal next_state   : state_type := rst_state;
 
@@ -68,7 +68,7 @@ begin
             when wait_for_rvalid_rise =>
                 if M_AXI_ACP_RVALID = '1' then
                     if M_AXI_ACP_RLAST = '1' then
-                        next_state <= wait_for_rvalid_fall_last;
+                        next_state <= wait_for_start;
                     else
                         next_state <= wait_for_rvalid_fall;
                     end if;
@@ -76,10 +76,6 @@ begin
             when wait_for_rvalid_fall =>
                 if M_AXI_ACP_RVALID = '0' then
                     next_state <= wait_for_rvalid_rise;
-                end if;
-            when wait_for_rvalid_fall_last =>
-                if M_AXI_ACP_RVALID = '0' then
-                    next_state <= wait_for_start;
                 end if;
         end case;
     end process;
@@ -141,7 +137,7 @@ begin
                 update_read_data <= true;
                 update_read_addr <= false;
                 update_read_result <= true;
-            when wait_for_rvalid_fall|wait_for_rvalid_fall_last =>
+            when wait_for_rvalid_fall =>
                 read_complete <= '1';
                 M_AXI_ACP_ARVALID <= '0';
                 M_AXI_ACP_RREADY <= '0';
