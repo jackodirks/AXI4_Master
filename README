@@ -1,3 +1,11 @@
 This VHDL library provides an interface into the AXI4 ACP Master.
 
 The library is tested using GHDL, and the tb file is written with GHDL in mind.
+
+The AXI 4 master allows for generic data width and address width, starting from 2**5 (=32) for both.
+It requires the input addresses and data to be 32 bit and the input address to be 32 bit aligned.
+This is the reasoning behind the *ADDR being 2 lines less then expected.
+It will assume that the slave wants the data aligned to 2**address_width_log2b, and act accordingly, recalculating addresses and setting write strobes as required.
+It does not allow bursting, so sending the width of the data bus is the best you can do in one go.
+The reading part and the writing part are independend.
+The reading part waits for a response from the AXI bus before finishing.

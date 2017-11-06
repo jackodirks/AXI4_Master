@@ -1,17 +1,23 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+USE ieee.numeric_std.ALL; 
 
 entity axi4_acp_writer is
+    generic (
+        axi_data_width_log2b    :   natural range 5 to natural'high := 6;
+        axi_address_width_log2b :   natural range 5 to natural'high := 5
+    );
     port (
         clk                 :   in std_logic;
         rst                 :   in std_logic;
-        write_addr          :   in  std_logic_vector(31 downto 0);
+        write_addr          :   in  std_logic_vector(31 downto 2);
         write_data          :   in  std_logic_vector(31 downto 0);
         write_start         :   in  std_logic;
         write_complete      :   out std_logic;
         write_result        :   out std_logic_vector(1 downto 0);
+        write_mask          :   in  std_logic_vector(3 downto 0);
         -- Write address channel signals
-        M_AXI_ACP_AWADDR    :   out std_logic_vector(31 downto 0);
+        M_AXI_ACP_AWADDR    :   out std_logic_vector(2**axi_address_width_log2b - 1 downto 0);
         M_AXI_ACP_AWLEN     :   out std_logic_vector(3 downto 0);
         M_AXI_ACP_AWSIZE    :   out std_logic_vector(2 downto 0);
         M_AXI_ACP_AWCACHE   :   out std_logic_vector(3 downto 0);
@@ -20,8 +26,8 @@ entity axi4_acp_writer is
         M_AXI_ACP_AWVALID   :   out std_logic;
         M_AXI_ACP_AWREADY   :   in  std_logic;
         -- Write data channel signals
-        M_AXI_ACP_WDATA     :   out std_logic_vector(63 downto 0);
-        M_AXI_ACP_WSTRB     :   out std_logic_vector(7 downto 0);
+        M_AXI_ACP_WDATA     :   out std_logic_vector(2**axi_data_width_log2b - 1 downto 0);
+        M_AXI_ACP_WSTRB     :   out std_logic_vector(2**(axi_data_width_log2b - 3) - 1 downto 0);
         M_AXI_ACP_WLAST     :   out std_logic;
         M_AXI_ACP_WVALID    :   out std_logic;
         M_AXI_ACP_WREADY    :   in  std_logic;
@@ -48,6 +54,8 @@ begin
         variable write_addr_safe    : std_logic_vector(write_addr'range);
         variable write_data_safe    : std_logic_vector(write_data'range);
         variable bresp_safe         : std_logic_vector(M_AXI_ACP_BRESP'range);
+        variable shift_modifier     : natural;
+        variable wdata_reg          : std_logic_vector(M_AXI_ACP_WDATA'range);
     begin
         if rst = '1' then
             write_addr_safe     := (others => '0');
@@ -64,10 +72,17 @@ begin
                 bresp_safe      := M_AXI_ACP_BRESP;
             end if;
         end if;
-        M_AXI_ACP_AWADDR                <= write_addr_safe;
-        M_AXI_ACP_WDATA(31 DOWNTO 0)    <= write_data_safe;
-        M_AXI_ACP_WDATA(63 DOWNTO 32)   <= (others => '0');
+        -- The address is right now aligned to 32 bit and needs to be aligned to 2**axi_data_width_log2b
+        -- We want the first axi_data_width_log2b-3 bits to be zero, counted from the right.
+        -- Now, it might be the case that axi_data_width_log2b-3 > 32. But that is really weird.
+        M_AXI_ACP_AWADDR                <= (M_AXI_ACP_AWADDR'high downto write_addr_safe'left + 1 => '0') & write_addr_safe(write_addr_safe'left downto axi_data_width_log2b - 3) & (axi_data_width_log2b - 4 downto 0 => '0');
+        shift_modifier                  := to_integer(unsigned(write_addr_safe(axi_data_width_log2b - 3 downto 2)));
+        wdata_reg                       := (wdata_reg'left downto write_data_safe'left + 1 => '0') & write_data_safe;
+        M_AXI_ACP_WDATA                 <= std_logic_vector(shift_left(unsigned(wdata_reg), shift_modifier*4));
         write_result                    <= bresp_safe;
+        -- Write strobe, which bytes of the WDATA are useful?
+        -- The write mask is the inverse write strobe, so use that and shift it
+        M_AXI_ACP_WSTRB                 <= std_logic_vector(shift_left(unsigned(not write_mask), 4*shift_modifier));
     end process;
 
     state_transition : process(clk, rst)
@@ -172,14 +187,12 @@ begin
         -- 4 bytes (=32bit) per burst, see AXI spec p 47
         M_AXI_ACP_AWSIZE    <= "010";
         -- Does not matter, since burst size is 1, see AXI spec p 48
-        M_AXI_ACP_AWBURST   <= (others => '0');
+        -- INCR = 0x01
+        M_AXI_ACP_AWBURST   <= "01";
         -- AWCACHE and AWUSER are specific for ZYNQ
         -- There is a possibility to use the ZYNQ cache, this is ignored.
         M_AXI_ACP_AWCACHE   <= (others => '0');
         M_AXI_ACP_AWUSER    <= (others => '0');
-        -- Write strobe, which bytes of the WDATA are useful?
-        -- The last 4. See AXI4 spec p 52
-        M_AXI_ACP_WSTRB     <= (3 DOWNTO 0 => '1', others => '0');
         -- There is only one transfer, so that one is always the last
         -- See AXI4 spec p 41
         M_AXI_ACP_WLAST     <= '1';

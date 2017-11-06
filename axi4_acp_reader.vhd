@@ -2,16 +2,20 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
 entity axi4_acp_reader is
+    generic (
+        axi_data_width_log2b    :   natural range 5 to natural'high := 5;
+        axi_address_width_log2b :   natural range 5 to natural'high := 6
+    );
     port (
         clk                 :   in  std_logic;
         rst                 :   in  std_logic;
-        read_addr           :   in  std_logic_vector(31 downto 0);
+        read_addr           :   in  std_logic_vector(31 downto 2);
         read_data           :   out std_logic_vector(31 downto 0);
         read_start          :   in  std_logic;
         read_complete       :   out std_logic;
         read_result         :   out std_logic_vector(1 downto 0);
         --  Read address channel signals
-        M_AXI_ACP_ARADDR    :   out std_logic_vector(31 downto 0);
+        M_AXI_ACP_ARADDR    :   out std_logic_vector(2**axi_address_width_log2b - 1 downto 0);
         M_AXI_ACP_ARLEN     :   out std_logic_vector(3 downto 0);
         M_AXI_ACP_ARSIZE    :   out std_logic_vector(2 downto 0);
         M_AXI_ACP_ARBURST   :   out std_logic_vector(1 downto 0);
@@ -20,7 +24,7 @@ entity axi4_acp_reader is
         M_AXI_ACP_ARVALID   :   out std_logic;
         M_AXI_ACP_ARREADY   :   in  std_logic;
         -- Read data channel signals
-        M_AXI_ACP_RDATA     :   in  std_logic_vector(63 downto 0);
+        M_AXI_ACP_RDATA     :   in  std_logic_vector(2**axi_data_width_log2b - 1 downto 0);
         M_AXI_ACP_RRESP     :   in  std_logic_vector(1 downto 0);
         M_AXI_ACP_RLAST     :   in  std_logic;
         M_AXI_ACP_RVALID    :   in  std_logic;
@@ -82,7 +86,7 @@ begin
 
     signal_store : process(clk, rst, update_read_data, update_read_addr, update_read_result)
         variable read_data_store : std_logic_vector(read_data'RANGE);
-        variable read_addr_store : std_logic_vector(read_addr'RANGE);
+        variable read_addr_store : std_logic_vector(read_addr'left downto 0);
         variable read_result_store : std_logic_vector(read_result'RANGE);
     begin
         if rst = '1' then
@@ -94,7 +98,7 @@ begin
                 read_data_store := M_AXI_ACP_RDATA(read_data'RANGE);
             end if;
             if update_read_addr then
-                read_addr_store := read_addr;
+                read_addr_store := read_addr & "00";
             end if;
             if update_read_result then
                 read_result_store := M_AXI_ACP_RRESP;

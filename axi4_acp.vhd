@@ -2,16 +2,21 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
 entity axi4_acp_master is
+    generic (
+        axi_data_width_log2b    :   natural range 5 to natural'high := 5;
+        axi_address_width_log2b :   natural range 5 to natural'high := 6
+    );
     port (
         clk                 :   in  std_logic;
         rst                 :   in  std_logic;
-        write_addr          :   in  std_logic_vector(31 downto 0);
+        write_addr          :   in  std_logic_vector(31 downto 2);
         write_data          :   in  std_logic_vector(31 downto 0);
-        read_addr           :   in  std_logic_vector(31 downto 0);
+        read_addr           :   in  std_logic_vector(31 downto 2);
         read_data           :   out std_logic_vector(31 downto 0);
         write_start         :   in  std_logic;
         write_complete      :   out std_logic;
         write_result        :   out std_logic_vector(1 downto 0);
+        write_mask          :   in  std_logic_vector(3 downto 0);
         read_start          :   in  std_logic;
         read_complete       :   out std_logic;
         read_result         :   out std_logic_vector(1 downto 0);
@@ -20,7 +25,7 @@ entity axi4_acp_master is
         -- No reset
         -- Write address channel signals
         M_AXI_ACP_AWID      :   out std_logic_vector(2 DOWNTO 0);
-        M_AXI_ACP_AWADDR    :   out std_logic_vector(31 downto 0);
+        M_AXI_ACP_AWADDR    :   out std_logic_vector(2**axi_address_width_log2b - 1 downto 0);
         M_AXI_ACP_AWLEN     :   out std_logic_vector(3 downto 0);
         M_AXI_ACP_AWSIZE    :   out std_logic_vector(2 downto 0);
         M_AXI_ACP_AWBURST   :   out std_logic_vector(1 downto 0);
@@ -33,8 +38,8 @@ entity axi4_acp_master is
         M_AXI_ACP_AWREADY   :   in  std_logic;
         -- Write data channel signals
         M_AXI_ACP_WID       :   out std_logic_vector(2 downto 0);
-        M_AXI_ACP_WDATA     :   out std_logic_vector(63 downto 0);
-        M_AXI_ACP_WSTRB     :   out std_logic_vector(7 downto 0);
+        M_AXI_ACP_WDATA     :   out std_logic_vector(2**axi_data_width_log2b - 1 downto 0);
+        M_AXI_ACP_WSTRB     :   out std_logic_vector(2**(axi_data_width_log2b - 3) - 1 downto 0);
         M_AXI_ACP_WLAST     :   out std_logic;
         M_AXI_ACP_WVALID    :   out std_logic;
         M_AXI_ACP_WREADY    :   in  std_logic;
@@ -45,7 +50,7 @@ entity axi4_acp_master is
         M_AXI_ACP_BREADY    :   out std_logic;
         --  Read address channel signals
         M_AXI_ACP_ARID      :   out std_logic_vector(2 downto 0);
-        M_AXI_ACP_ARADDR    :   out std_logic_vector(31 downto 0);
+        M_AXI_ACP_ARADDR    :   out std_logic_vector(2**axi_address_width_log2b - 1 downto 0);
         M_AXI_ACP_ARLEN     :   out std_logic_vector(3 downto 0);
         M_AXI_ACP_ARSIZE    :   out std_logic_vector(2 downto 0);
         M_AXI_ACP_ARBURST   :   out std_logic_vector(1 downto 0);
@@ -58,7 +63,7 @@ entity axi4_acp_master is
         M_AXI_ACP_ARREADY   :   in  std_logic;
         -- Read data channel signals
         M_AXI_ACP_RID       :   in  std_logic_vector(2 downto 0);
-        M_AXI_ACP_RDATA     :   in  std_logic_vector(63 downto 0);
+        M_AXI_ACP_RDATA     :   in  std_logic_vector(2**axi_data_width_log2b - 1 downto 0);
         M_AXI_ACP_RRESP     :   in  std_logic_vector(1 downto 0);
         M_AXI_ACP_RLAST     :   in  std_logic;
         M_AXI_ACP_RVALID    :   in  std_logic;
@@ -87,6 +92,10 @@ begin
     M_AXI_ACP_ARID <= (others => '0');
     -- Instantiate the writer
     writer : entity work.axi4_acp_writer
+    generic map (
+        axi_data_width_log2b    => axi_data_width_log2b,
+        axi_address_width_log2b => axi_address_width_log2b
+    )
     port map (
         clk                 => clk,
         rst                 => rst,
@@ -95,6 +104,7 @@ begin
         write_start         => write_start,
         write_complete      => write_complete,
         write_result        => write_result,
+        write_mask          => write_mask,
         M_AXI_ACP_AWADDR    => M_AXI_ACP_AWADDR,
         M_AXI_ACP_AWLEN     => M_AXI_ACP_AWLEN,
         M_AXI_ACP_AWSIZE    => M_AXI_ACP_AWSIZE,
@@ -114,6 +124,10 @@ begin
     );
     -- Instantiate the reader
     reader : entity work.axi4_acp_reader
+    generic map (
+        axi_data_width_log2b    => axi_data_width_log2b,
+        axi_address_width_log2b => axi_address_width_log2b
+    )
     port map (
         clk                 => clk,
         rst                 => rst,

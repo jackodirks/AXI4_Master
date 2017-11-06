@@ -8,68 +8,78 @@ entity tb_axi4_acp is
 end tb_axi4_acp;
 
 architecture Behavioral of tb_axi4_acp is
-    constant clock_period           : time := 20 ns;
+    constant clock_period               : time := 20 ns;
 
-    signal test_done                : boolean;
-    signal read_test_done           : boolean := false;
-    signal write_test_done          : boolean := false;
+    signal test_done                    : boolean;
+    signal read_test_done               : boolean := false;
+    signal write_test_done              : boolean := false;
 
-    signal clk                      : std_logic                         := '1';
-    signal rst                      : std_logic                         := '1';
+    signal clk                          : std_logic                         := '1';
+    signal rst                          : std_logic                         := '1';
+
+    -- AXI 1
+    -- Constants
+    constant axi_1_data_width_log2b     : natural                           := 5;
+    constant axi_1_address_wdith_log2b  : natural                           := 5;
     -- The signals for axi4_acp_1
-    signal AXI_ACP_1_write_addr     : std_logic_vector(31 downto 0)     := (others => '0');
-    signal AXI_ACP_1_write_data     : std_logic_vector(31 downto 0)     := (others => '0');
-    signal AXI_ACP_1_read_addr      : std_logic_vector(31 downto 0)     := (others => '0');
-    signal AXI_ACP_1_read_data      : std_logic_vector(31 downto 0);
-    signal AXI_ACP_1_write_start    : std_logic                         := '0';
-    signal AXI_ACP_1_write_complete : std_logic;
-    signal AXI_ACP_1_write_result   : std_logic_vector(1 downto 0);
-    signal AXI_ACP_1_read_start     : std_logic                         := '0';
-    signal AXI_ACP_1_read_complete  : std_logic;
-    signal AXI_ACP_1_read_result    : std_logic_vector(1 downto 0);
-    signal AXI_ACP_1_ACLK           : std_logic;
-    signal AXI_ACP_1_AWID           : std_logic_vector(2 DOWNTO 0);
-    signal AXI_ACP_1_AWADDR         : std_logic_vector(31 downto 0);
-    signal AXI_ACP_1_AWLEN          : std_logic_vector(3 downto 0);
-    signal AXI_ACP_1_AWSIZE         : std_logic_vector(2 downto 0);
-    signal AXI_ACP_1_AWBURST        : std_logic_vector(1 downto 0);
-    signal AXI_ACP_1_AWLOCK         : std_logic_vector(1 downto 0);
-    signal AXI_ACP_1_AWCACHE        : std_logic_vector(3 downto 0);
-    signal AXI_ACP_1_AWPROT         : std_logic_vector(2 downto 0);
-    signal AXI_ACP_1_AWQOS          : std_logic_vector(3 downto 0);
-    signal AXI_ACP_1_AWUSER         : std_logic_vector(4 downto 0);
-    signal AXI_ACP_1_AWVALID        : std_logic;
-    signal AXI_ACP_1_AWREADY        : std_logic                         := '0';
-    signal AXI_ACP_1_WID            : std_logic_vector(2 downto 0);
-    signal AXI_ACP_1_WDATA          : std_logic_vector(63 downto 0);
-    signal AXI_ACP_1_WSTRB          : std_logic_vector(7 downto 0);
-    signal AXI_ACP_1_WLAST          : std_logic;
-    signal AXI_ACP_1_WVALID         : std_logic;
-    signal AXI_ACP_1_WREADY         : std_logic                         := '0';
-    signal AXI_ACP_1_BID            : std_logic_vector(2 downto 0)      := (others => '0');
-    signal AXI_ACP_1_BRESP          : std_logic_vector(1 downto 0)      := (others => '0');
-    signal AXI_ACP_1_BVALID         : std_logic                         := '0';
-    signal AXI_ACP_1_BREADY         : std_logic;
-    signal AXI_ACP_1_ARID           : std_logic_vector(2 downto 0);
-    signal AXI_ACP_1_ARADDR         : std_logic_vector(31 downto 0);
-    signal AXI_ACP_1_ARLEN          : std_logic_vector(3 downto 0);
-    signal AXI_ACP_1_ARSIZE         : std_logic_vector(2 downto 0);
-    signal AXI_ACP_1_ARBURST        : std_logic_vector(1 downto 0);
-    signal AXI_ACP_1_ARLOCK         : std_logic_vector(1 downto 0);
-    signal AXI_ACP_1_ARCACHE        : std_logic_vector(3 downto 0);
-    signal AXI_ACP_1_ARPROT         : std_logic_vector(2 downto 0);
-    signal AXI_ACP_1_ARQOS          : std_logic_vector(3 downto 0);
-    signal AXI_ACP_1_ARUSER         : std_logic_vector(4 downto 0);
-    signal AXI_ACP_1_ARVALID        : std_logic;
-    signal AXI_ACP_1_ARREADY        : std_logic                         := '0';
-    signal AXI_ACP_1_RID            : std_logic_vector(2 downto 0)      := (others => '0');
-    signal AXI_ACP_1_RDATA          : std_logic_vector(63 downto 0)     := (others => '0');
-    signal AXI_ACP_1_RRESP          : std_logic_vector(1 downto 0)      := (others => '0');
-    signal AXI_ACP_1_RLAST          : std_logic                         := '0';
-    signal AXI_ACP_1_RVALID         : std_logic                         := '0';
-    signal AXI_ACP_1_RREADY         : std_logic;
+    signal AXI_ACP_1_write_addr         : std_logic_vector(31 downto 2)     := (others => '0');
+    signal AXI_ACP_1_write_data         : std_logic_vector(31 downto 0)     := (others => '0');
+    signal AXI_ACP_1_read_addr          : std_logic_vector(31 downto 2)     := (others => '0');
+    signal AXI_ACP_1_read_data          : std_logic_vector(31 downto 0);
+    signal AXI_ACP_1_write_start        : std_logic                         := '0';
+    signal AXI_ACP_1_write_complete     : std_logic;
+    signal AXI_ACP_1_write_result       : std_logic_vector(1 downto 0);
+    signal AXI_ACP_1_write_mask         : std_logic_vector(3 downto 0)      := (others => '1');
+    signal AXI_ACP_1_read_start         : std_logic                         := '0';
+    signal AXI_ACP_1_read_complete      : std_logic;
+    signal AXI_ACP_1_read_result        : std_logic_vector(1 downto 0);
+    signal AXI_ACP_1_ACLK               : std_logic;
+    signal AXI_ACP_1_AWID               : std_logic_vector(2 DOWNTO 0);
+    signal AXI_ACP_1_AWADDR             : std_logic_vector(31 downto 0);
+    signal AXI_ACP_1_AWLEN              : std_logic_vector(3 downto 0);
+    signal AXI_ACP_1_AWSIZE             : std_logic_vector(2 downto 0);
+    signal AXI_ACP_1_AWBURST            : std_logic_vector(1 downto 0);
+    signal AXI_ACP_1_AWLOCK             : std_logic_vector(1 downto 0);
+    signal AXI_ACP_1_AWCACHE            : std_logic_vector(3 downto 0);
+    signal AXI_ACP_1_AWPROT             : std_logic_vector(2 downto 0);
+    signal AXI_ACP_1_AWQOS              : std_logic_vector(3 downto 0);
+    signal AXI_ACP_1_AWUSER             : std_logic_vector(4 downto 0);
+    signal AXI_ACP_1_AWVALID            : std_logic;
+    signal AXI_ACP_1_AWREADY            : std_logic                         := '0';
+    signal AXI_ACP_1_WID                : std_logic_vector(2 downto 0);
+    signal AXI_ACP_1_WDATA              : std_logic_vector(31 downto 0);
+    signal AXI_ACP_1_WSTRB              : std_logic_vector(3 downto 0);
+    signal AXI_ACP_1_WLAST              : std_logic;
+    signal AXI_ACP_1_WVALID             : std_logic;
+    signal AXI_ACP_1_WREADY             : std_logic                         := '0';
+    signal AXI_ACP_1_BID                : std_logic_vector(2 downto 0)      := (others => '0');
+    signal AXI_ACP_1_BRESP              : std_logic_vector(1 downto 0)      := (others => '0');
+    signal AXI_ACP_1_BVALID             : std_logic                         := '0';
+    signal AXI_ACP_1_BREADY             : std_logic;
+    signal AXI_ACP_1_ARID               : std_logic_vector(2 downto 0);
+    signal AXI_ACP_1_ARADDR             : std_logic_vector(31 downto 0);
+    signal AXI_ACP_1_ARLEN              : std_logic_vector(3 downto 0);
+    signal AXI_ACP_1_ARSIZE             : std_logic_vector(2 downto 0);
+    signal AXI_ACP_1_ARBURST            : std_logic_vector(1 downto 0);
+    signal AXI_ACP_1_ARLOCK             : std_logic_vector(1 downto 0);
+    signal AXI_ACP_1_ARCACHE            : std_logic_vector(3 downto 0);
+    signal AXI_ACP_1_ARPROT             : std_logic_vector(2 downto 0);
+    signal AXI_ACP_1_ARQOS              : std_logic_vector(3 downto 0);
+    signal AXI_ACP_1_ARUSER             : std_logic_vector(4 downto 0);
+    signal AXI_ACP_1_ARVALID            : std_logic;
+    signal AXI_ACP_1_ARREADY            : std_logic                         := '0';
+    signal AXI_ACP_1_RID                : std_logic_vector(2 downto 0)      := (others => '0');
+    signal AXI_ACP_1_RDATA              : std_logic_vector(31 downto 0)     := (others => '0');
+    signal AXI_ACP_1_RRESP              : std_logic_vector(1 downto 0)      := (others => '0');
+    signal AXI_ACP_1_RLAST              : std_logic                         := '0';
+    signal AXI_ACP_1_RVALID             : std_logic                         := '0';
+    signal AXI_ACP_1_RREADY             : std_logic;
 begin
     axi4_acp_1 : entity work.axi4_acp_master
+    generic map (
+        axi_data_width_log2b    => axi_1_data_width_log2b,
+        axi_address_width_log2b => axi_1_address_wdith_log2b
+    )
     port map (
         clk                 => clk,
         rst                 => rst,
@@ -80,6 +90,7 @@ begin
         write_start         => AXI_ACP_1_write_start,
         write_complete      => AXI_ACP_1_write_complete,
         write_result        => AXI_ACP_1_write_result,
+        write_mask          => AXI_ACP_1_write_mask,
         read_start          => AXI_ACP_1_read_start,
         read_complete       => AXI_ACP_1_read_complete,
         read_result         => AXI_ACP_1_read_result,
@@ -199,7 +210,7 @@ begin
         assert AXI_ACP_1_write_complete = '0' severity error;
         -- AXI_ACP_1_write_result
         assert AXI_ACP_1_AWVALID = '1' severity error;
-        assert AXI_ACP_1_AWADDR = std_logic_vector(write_addr);
+        assert AXI_ACP_1_AWADDR = std_logic_vector(write_addr) & "00";
         assert AXI_ACP_1_WDATA = std_logic_vector(resize(write_data, AXI_ACP_1_WDATA'length));
         assert AXI_ACP_1_WVALID = '1' severity error;
         -- AXI_ACP_1_BREADY
@@ -301,7 +312,7 @@ begin
         -- AXI_ACP_1_read_data
         assert AXI_ACP_1_read_complete = '0' severity error;
         -- AXI_ACP_1_read_result
-        assert AXI_ACP_1_ARADDR = std_logic_vector(read_addr) severity error;
+        assert AXI_ACP_1_ARADDR = std_logic_vector(read_addr) & "00" severity error;
         -- AXI_ACP_1_ARLEN
         -- AXI_ACP_1_ARSIZE
         -- AXI_ACP_1_ARBURST
@@ -324,7 +335,7 @@ begin
             -- AXI_ACP_1_read_data
             assert AXI_ACP_1_read_complete = '0' severity error;
             -- AXI_ACP_1_read_result
-            assert AXI_ACP_1_ARADDR = std_logic_vector(read_addr) severity error;
+            assert AXI_ACP_1_ARADDR = std_logic_vector(read_addr) & "00" severity error;
             -- AXI_ACP_1_ARLEN
             -- AXI_ACP_1_ARSIZE
             -- AXI_ACP_1_ARBURST
