@@ -13,8 +13,7 @@ BENCHFLAGS = --wave=$@
 VIEWFLAGS = --stdout
 CLEANFLAGS = --remove --workdir=$(WORKDIR) --std=$(STD)
 
-TESTBENCHFILE := tb_axi4_acp.vhd
-TESTBENCH := tb_axi4_acp
+TESTBENCH := tb_axi4
 WORKFILE := $(WORKDIR)$(WORKNAMEPREFIX)-$(WORKNAMESUFFIX)
 TARGET := $(WORKDIR)$(TESTBENCH).ghw
 SRC := $(wildcard *.vhd)
