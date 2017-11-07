@@ -131,9 +131,9 @@ begin
                 read_complete <= '0';
                 M_AXI_ARVALID <= '1';
                 M_AXI_RREADY <= '0';
-                update_read_data <= false;
+                update_read_data <= true;
                 update_read_addr <= false;
-                update_read_result <= false;
+                update_read_result <= true;
             when wait_for_rvalid_rise =>
                 read_complete <= '0';
                 M_AXI_ARVALID <= '0';
@@ -142,7 +142,7 @@ begin
                 update_read_addr <= false;
                 update_read_result <= true;
             when wait_for_rvalid_fall =>
-                read_complete <= '1';
+                read_complete <= '0';
                 M_AXI_ARVALID <= '0';
                 M_AXI_RREADY <= '0';
                 update_read_data <= true;
