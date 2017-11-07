@@ -1,5 +1,5 @@
 *.swp
 work/
-tb_axi4_acp
+tb_axi4
 *.o
 *.lst
