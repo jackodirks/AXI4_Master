@@ -1,5 +1,6 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+USE ieee.numeric_std.ALL;
 
 entity axi4_reader is
     generic (
@@ -85,9 +86,10 @@ begin
     end process;
 
     signal_store : process(clk, rst, update_read_data, update_read_addr, update_read_result)
-        variable read_data_store : std_logic_vector(read_data'RANGE);
+        variable read_data_store : std_logic_vector(M_AXI_RDATA'RANGE);
         variable read_addr_store : std_logic_vector(read_addr'left downto 0);
         variable read_result_store : std_logic_vector(read_result'RANGE);
+        variable shift_modifier     : natural;
     begin
         if rst = '1' then
             read_data_store := (others => '0');
@@ -95,7 +97,7 @@ begin
             read_result_store := (others => '0');
         elsif rising_edge(clk) then
             if update_read_data then
-                read_data_store := M_AXI_RDATA(read_data'RANGE);
+                read_data_store := M_AXI_RDATA;
             end if;
             if update_read_addr then
                 read_addr_store := read_addr & "00";
@@ -104,9 +106,16 @@ begin
                 read_result_store := M_AXI_RRESP;
             end if;
         end if;
-        read_data <= read_data_store;
-        read_result <= read_result_store;
-        M_AXI_ARADDR <= read_addr_store;
+        if axi_data_width_log2b > 5 then
+            shift_modifier  := to_integer(unsigned(read_addr_store(axi_data_width_log2b - 4 downto 2)))*4;
+        else
+            shift_modifier  := 0;
+        end if;
+        read_data       <= read_data_store(read_data'left + shift_modifier*8 downto shift_modifier*8);
+        read_result     <= read_result_store;
+        M_AXI_ARADDR    <= (M_AXI_ARADDR'left downto read_addr_store'left + 1 => '0') & read_addr_store(read_addr_store'left downto axi_data_width_log2b - 3) & (axi_data_width_log2b - 4 downto 0 => '0');
+        -- 2**axi_data_width_log2b / 8 bytes per transfer
+        M_AXI_ARSIZE    <= std_logic_vector(to_unsigned(axi_data_width_log2b - 3, M_AXI_ARSIZE'length));
     end process;
 
     -- The state decides the output
@@ -152,8 +161,6 @@ begin
         -- The following signals get a default value because this is still a simple test
         -- One burst:
         M_AXI_ARLEN <= (others => '0');
-        -- 4 bytes in transfer
-        M_AXI_ARSIZE <= "010";
         -- For the test, the burst type does not matter. Keep it at 0 (FIXED)
         M_AXI_ARBURST <= (others => '0');
         -- See tech ref page 103. ARCACHE and AWCACHE control wether or not the processor cache is involved in this transaction

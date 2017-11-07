@@ -1,6 +1,6 @@
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-USE ieee.numeric_std.ALL; 
+USE ieee.numeric_std.ALL;
 
 entity axi4_writer is
     generic (
@@ -56,6 +56,7 @@ begin
         variable bresp_safe         : std_logic_vector(M_AXI_BRESP'range);
         variable shift_modifier     : natural;
         variable wdata_reg          : std_logic_vector(M_AXI_WDATA'range);
+        variable write_strobe       : std_logic_vector(M_AXI_WSTRB'range);
     begin
         if rst = '1' then
             write_addr_safe     := (others => '0');
@@ -72,17 +73,22 @@ begin
                 bresp_safe      := M_AXI_BRESP;
             end if;
         end if;
+        if axi_data_width_log2b > 5 then
+            shift_modifier  := to_integer(unsigned(write_addr_safe(axi_data_width_log2b - 4 downto 2)))*4;
+        else
+            shift_modifier := 0;
+        end if;
+        wdata_reg       := (wdata_reg'left downto write_data_safe'left + 1 => '0') & write_data_safe;
         -- The address is right now aligned to 32 bit and needs to be aligned to 2**axi_data_width_log2b
         -- We want the first axi_data_width_log2b-3 bits to be zero, counted from the right.
         -- Now, it might be the case that axi_data_width_log2b-3 > 32. But that is really weird.
-        M_AXI_AWADDR                <= (M_AXI_AWADDR'high downto write_addr_safe'left + 1 => '0') & write_addr_safe(write_addr_safe'left downto axi_data_width_log2b - 3) & (axi_data_width_log2b - 4 downto 0 => '0');
-        shift_modifier                  := to_integer(unsigned(write_addr_safe(axi_data_width_log2b - 3 downto 2)));
-        wdata_reg                       := (wdata_reg'left downto write_data_safe'left + 1 => '0') & write_data_safe;
-        M_AXI_WDATA                 <= std_logic_vector(shift_left(unsigned(wdata_reg), shift_modifier*4));
-        write_result                    <= bresp_safe;
+        M_AXI_AWADDR    <= (M_AXI_AWADDR'left downto write_addr_safe'left + 1 => '0') & write_addr_safe(write_addr_safe'left downto axi_data_width_log2b - 3) & (axi_data_width_log2b - 4 downto 0 => '0');
+        M_AXI_WDATA     <= std_logic_vector(shift_left(unsigned(wdata_reg), shift_modifier*8));
+        write_result    <= bresp_safe;
         -- Write strobe, which bytes of the WDATA are useful?
         -- The write mask is the inverse write strobe, so use that and shift it
-        M_AXI_WSTRB                 <= std_logic_vector(shift_left(unsigned(not write_mask), 4*shift_modifier));
+        write_strobe    := (write_strobe'left downto write_mask'length => '0') & (write_mask);
+        M_AXI_WSTRB     <= std_logic_vector(shift_left(unsigned(write_strobe), shift_modifier));
     end process;
 
     state_transition : process(clk, rst)
