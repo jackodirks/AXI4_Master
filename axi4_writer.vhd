@@ -4,8 +4,8 @@ USE ieee.numeric_std.ALL;
 
 entity axi4_writer is
     generic (
-        axi_data_width_log2b    :   natural range 5 to natural'high := 6;
-        axi_address_width_log2b :   natural range 5 to natural'high := 5
+        axi_data_width_log2b    :   natural range 5 to 255 := 6;
+        axi_address_width_log2b :   natural range 5 to 255 := 5
     );
     port (
         clk                 :   in std_logic;

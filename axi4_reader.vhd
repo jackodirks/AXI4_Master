@@ -3,8 +3,8 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 entity axi4_reader is
     generic (
-        axi_data_width_log2b    :   natural range 5 to natural'high := 5;
-        axi_address_width_log2b :   natural range 5 to natural'high := 6
+        axi_data_width_log2b    :   natural range 5 to 255 := 5;
+        axi_address_width_log2b :   natural range 5 to 255 := 6
     );
     port (
         clk                 :   in  std_logic;
